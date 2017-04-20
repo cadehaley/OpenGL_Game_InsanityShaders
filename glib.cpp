@@ -3,12 +3,21 @@
 Gviewer::Gviewer(){
   bpp = flags = gProgramID = gVBO = gIBO = 0;
 
-  width = 1080;
-  height = 720;
+  // Window dimensions
+  width =      1080;
+  height =     720;
   gWindow = NULL;
   gRenderQuad = true;
 
   gVertexPos2DLocation = -1;
+
+  // GL camera
+  FOV =         90;
+  ZMIN =        0.01;
+  ZMAX =        100.0;
+  DIM =         1.8;
+  th =          8.0;
+  ph =          4.0;
 }
 
 bool Gviewer::initGL(){
@@ -108,12 +117,21 @@ bool Gviewer::initGL(){
                     glClearColor( 0.f, 0.f, 0.f, 1.f );
 
                     //VBO data
-                    GLfloat vertexData[] =
+                    /*GLfloat vertexData[] =
                     {
                         -0.5f, -0.5f,
                          0.5f, -0.5f,
                          0.5f,  0.5f,
                         -0.5f,  0.5f
+                    };*/
+
+                    //VBO data
+                    GLfloat vertexData[] =
+                    {
+                        -0.5f, -0.5f, 0.0f,
+                         0.5f, -0.5f, 0.0f,
+                         0.5f,  0.5f, 0.0f,
+                        -0.5f,  0.5f, 0.0f
                     };
 
                     //IBO data
@@ -122,7 +140,7 @@ bool Gviewer::initGL(){
                     // Create VBO
                     glGenBuffers(1, &gVBO);
                     glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-                    glBufferData(GL_ARRAY_BUFFER, 2 * 4 * sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+                    glBufferData(GL_ARRAY_BUFFER, 3 * 4 * sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
 
                     // Create IBO
                     glGenBuffers(1, &gIBO);
@@ -161,7 +179,10 @@ void Gviewer::handleKeys(unsigned char key, int x, int y){
 void Gviewer::render(){
   //Clear color buffer
   glClear( GL_COLOR_BUFFER_BIT );
+  glClearColor(0.5, 0.5, 1.0, 1.0);
 
+  resize();
+  doView();
   //Render quad
   if( gRenderQuad )
   {
@@ -174,7 +195,7 @@ void Gviewer::render(){
 
       // Set vertex data
       glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-      glVertexAttribPointer(gVertexPos2DLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
+      glVertexAttribPointer(gVertexPos2DLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
 
       // Set index data and Render
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
@@ -186,19 +207,9 @@ void Gviewer::render(){
       // Unbind program
       glUseProgram(NULL);
 
-      //  Axes for reference
-      glColor3f(0,1,1);
-      glBegin(GL_LINES);
-      glVertex3f(0,0,0);
-      glVertex3f(2,0,0);
-      glVertex3f(0,0,0);
-      glVertex3f(0,2,0);
-      glVertex3f(0,0,0);
-      glVertex3f(0,0,2);
-      glEnd();
-      glDisable(GL_DEPTH_TEST);
 
   }
+
 
   //Check for error
   GLuint error = glGetError();
@@ -210,7 +221,59 @@ void Gviewer::render(){
 }
 
 
+void Gviewer::handleEvent(SDL_Event * event)
+{
+    // Window events
 
+    // If window event occurred
+    if (event->type == 768){
+        switch (event->window.event){
+            // Resize window
+            case SDL_WINDOWEVENT_RESIZED:
+                width = event->window.data1;
+                height = event->window.data2;
+                resize();
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void Gviewer::resize(){
+    float asratio;
+
+    if (height == 0) height = 1; //to avoid divide-by-zero
+
+    asratio = width / (double) height;
+
+    //glViewport(0, 0, width, height*asratio); //adjust GL viewport
+
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    double ydim = ZMIN*tan(FOV*M_PI/360);
+    double xdim = ydim*asratio;
+    glFrustum(-xdim,+xdim,-ydim,+ydim,ZMIN,ZMAX);
+//    gluPerspective(FOV, asratio, ZMIN, ZMAX); //adjust perspective
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+//
+//  Set view
+//
+void Gviewer::doView()
+{
+
+    glLoadIdentity();
+
+    glRotatef(th, 0.0f, 1.0, 0.0f);
+    glRotatef(ph, 1.0f, 0.0f, 0.0f);
+    glTranslatef(0.2f, 0.2f, 0.2f);
+
+}
 
 void Gviewer::printProgramLog( GLuint program )
 {

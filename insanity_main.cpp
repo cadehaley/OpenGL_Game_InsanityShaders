@@ -74,7 +74,7 @@ int main( int argc, char* args[] )
 					printf("ERROR: %s\n",glewGetErrorString(GlewInitResult));
 					exit(EXIT_FAILURE);
 				}
-				
+
 
 
 				// Initialize OpenGL
@@ -83,8 +83,28 @@ int main( int argc, char* args[] )
 					success = false;
 				}
 				else{
-					//viewer.render();
+					bool running = true;
 
+
+					while (running){
+							SDL_Event event;
+							while (SDL_PollEvent(&event)){
+									// If user quits
+									if (event.type == SDL_QUIT){
+										running = false;
+									}
+
+									if (event.type = SDL_KEYDOWN){
+									}
+
+									// Pass event to event handler
+									viewer.handleEvent(&event);
+
+									viewer.render();
+									SDL_GL_SwapWindow(viewer.gWindow);
+
+							}
+					}
 				}
 			}
 
@@ -92,10 +112,10 @@ int main( int argc, char* args[] )
 			//SDL_FillRect( screenSurface, NULL, SDL_MapRGB( screenSurface->format, 0xFF, 0xFF, 0xFF ) );
 
 			//Update the surface
-			SDL_UpdateWindowSurface( viewer.gWindow );
+			//SDL_UpdateWindowSurface( viewer.gWindow );
 
 			//Wait two seconds
-			SDL_Delay( 2000 );
+			//SDL_Delay( 2000 );
 		}
 	}
 

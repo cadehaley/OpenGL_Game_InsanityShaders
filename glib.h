@@ -21,10 +21,13 @@ class Gviewer
     SDL_Window* gWindow; //The window we'll be rendering to
     SDL_GLContext gContext; //OpenGL context
 
+    // GL variables
     GLuint gProgramID;
     GLint gVertexPos2DLocation;
     GLuint gVBO;
     GLuint gIBO;
+    int FOV;
+    float ZMIN,ZMAX,DIM,th,ph;
 
     Gviewer();
 
@@ -41,8 +44,16 @@ class Gviewer
     //Renders quad to the screen
     void render();
 
+    // Handle events for a variety of SDL actions
+    void handleEvent(SDL_Event * event);
+
     //Frees media and shuts down SDL
     void close();
+
+    // Resizes window
+    void resize();
+
+    void doView();
 
     //Shader loading utility programs
     void printProgramLog( GLuint program );
