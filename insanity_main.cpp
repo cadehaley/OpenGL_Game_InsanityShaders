@@ -1,6 +1,8 @@
 // Resource: http://lazyfoo.net/tutorials/SDL/01_hello_SDL/linux/cli/index.php
 
 //Using SDL and standard IO
+#include <GL/glew.h>
+#include <GL/glu.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <stdio.h>
@@ -19,19 +21,29 @@ int main( int argc, char* args[] )
 	Gviewer viewer;
 
 	//Initialize SDL
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
 		success = false;
 	}
 	else
 	{
+
+
 		//Use OpenGL 2.1
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+		// OpenGL prefs
+		SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
+    SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
+    SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
+    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
+    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+
 
 		//Create window
-		viewer.gWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, viewer.width, viewer.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
+		viewer.gWindow = SDL_CreateWindow( "Insanity", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, viewer.width, viewer.height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
 		if( viewer.gWindow == NULL )
 		{
 			printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -52,10 +64,27 @@ int main( int argc, char* args[] )
 					printf("Warning: Unable to set Vsync. SDL Error: %s\n", SDL_GetError());
 				}
 
+				// Use OpenGL 3.0 and later
+				glewExperimental = GL_TRUE;
+				// Initialize GLEW
+				GLenum GlewInitResult = glewInit();
+				// Error check
+				if (GLEW_OK != GlewInitResult)
+				{
+					printf("ERROR: %s\n",glewGetErrorString(GlewInitResult));
+					exit(EXIT_FAILURE);
+				}
+				
+
+
 				// Initialize OpenGL
 				if ( !viewer.initGL() ){
 					printf("Unable to initialize OpenGL!\n");
 					success = false;
+				}
+				else{
+					//viewer.render();
+
 				}
 			}
 
@@ -63,18 +92,18 @@ int main( int argc, char* args[] )
 			//SDL_FillRect( screenSurface, NULL, SDL_MapRGB( screenSurface->format, 0xFF, 0xFF, 0xFF ) );
 
 			//Update the surface
-			//SDL_UpdateWindowSurface( window );
+			SDL_UpdateWindowSurface( viewer.gWindow );
 
 			//Wait two seconds
-			//SDL_Delay( 2000 );
+			SDL_Delay( 2000 );
 		}
 	}
 
 	//Destroy window
-	//SDL_DestroyWindow( window );
+	SDL_DestroyWindow( viewer.gWindow );
 
 	//Quit SDL subsystems
-	//SDL_Quit();
+	SDL_Quit();
 
 	return success;
 }

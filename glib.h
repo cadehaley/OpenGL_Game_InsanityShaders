@@ -1,6 +1,8 @@
 #ifndef GVIEWER_H
 #define GVIEWER_H
 
+#include <GL/glew.h>
+#include <GL/glu.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <iostream>
@@ -8,13 +10,14 @@
 class Gviewer
 {
   private:
-    int bpp;      // Color depth
-    int flags;    // Flags passed to SDL_SetVideoMode
+
     bool gRenderQuad; //Render flag
 
   public:
     int width;    // Window width
     int height;   // height
+    int bpp;      // Color depth
+    int flags;    // Rendering flags
     SDL_Window* gWindow; //The window we'll be rendering to
     SDL_GLContext gContext; //OpenGL context
 
