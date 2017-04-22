@@ -31,15 +31,15 @@ int main( int argc, char* args[] )
 
 
 		//Use OpenGL 2.1
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 		// OpenGL prefs
-		SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
-    SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
-    SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
-    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
-    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+		//SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
+		//SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
+		//SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
+		//SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
+		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
 
 		//Create window
@@ -78,44 +78,37 @@ int main( int argc, char* args[] )
 
 
 				// Initialize OpenGL
-				if ( !viewer.initGL() ){
+				if ( !viewer.initGL() )
+				{
 					printf("Unable to initialize OpenGL!\n");
 					success = false;
 				}
-				else{
+				else
+				{
 					bool running = true;
 
 
 					while (running){
-							SDL_Event event;
-							while (SDL_PollEvent(&event)){
-									// If user quits
-									if (event.type == SDL_QUIT){
-										running = false;
-									}
+						SDL_Event event;
+						while (SDL_PollEvent(&event)){
+								// If user quits
+								if (event.type == SDL_QUIT){
+									running = false;
+								}
 
-									if (event.type = SDL_KEYDOWN){
-									}
+								if (event.type = SDL_KEYDOWN){
+								}
 
-									// Pass event to event handler
-									viewer.handleEvent(&event);
+								// Pass event to event handler
+								viewer.handleEvent(&event);
 
-									viewer.render();
-									SDL_GL_SwapWindow(viewer.gWindow);
+								viewer.render();
+								SDL_GL_SwapWindow(viewer.gWindow);
 
-							}
+						}
 					}
 				}
 			}
-
-			//Fill the surface white
-			//SDL_FillRect( screenSurface, NULL, SDL_MapRGB( screenSurface->format, 0xFF, 0xFF, 0xFF ) );
-
-			//Update the surface
-			//SDL_UpdateWindowSurface( viewer.gWindow );
-
-			//Wait two seconds
-			//SDL_Delay( 2000 );
 		}
 	}
 
