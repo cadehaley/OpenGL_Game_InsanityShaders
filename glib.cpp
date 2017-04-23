@@ -31,6 +31,8 @@ bool Gviewer::initGL()
 	
 	// 	LOAD RESOURCES
 	// Textures
+	glEnable(GL_TEXTURE_2D);
+
 	IMG_Init(IMG_INIT_JPG);
 	loadTexture("box.jpg");
 
@@ -38,17 +40,24 @@ bool Gviewer::initGL()
 		textureid.push_back(-1);
 		glGenTextures(1, &textureid[i]);
 		glBindTexture(GL_TEXTURE_2D, textureid[i]);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		int Mode = GL_RGB;
+		if (textures[i]->format->BytesPerPixel == 4){
+			Mode = GL_RGBA;
+		}
+		
+	
 		glTexImage2D(GL_TEXTURE_2D,
 			0, // level, 0=base, no minimap
-			GL_RGBA,
+			Mode,
 			textures[i]->w,
 			textures[i]->h,
 			0,
-			GL_RGBA,
+			Mode,
 			GL_UNSIGNED_BYTE,
 			textures[i]->pixels
 		);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		SDL_FreeSurface(textures[i]);
 	}
 
