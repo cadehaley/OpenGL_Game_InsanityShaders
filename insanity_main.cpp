@@ -40,6 +40,7 @@ int main( int argc, char* args[] )
 		//SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
 		//SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
 		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+		SDL_GL_SetSwapInterval(1);
 
 
 		//Create window
@@ -101,16 +102,16 @@ int main( int argc, char* args[] )
 
 								// Pass event to event handler
 								viewer.handleEvent(&event);
-
-								viewer.render();
-								SDL_GL_SwapWindow(viewer.gWindow);
-
 						}
+						viewer.render();
+						SDL_GL_SwapWindow(viewer.gWindow);
 					}
 				}
 			}
 		}
 	}
+
+	viewer.close();
 
 	//Destroy window
 	SDL_DestroyWindow( viewer.gWindow );

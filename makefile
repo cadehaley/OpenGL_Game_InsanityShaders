@@ -1,6 +1,6 @@
 #OBJS specifies which files to compile as part of the project
 OBJS = insanity_main.cpp glib.cpp
-FLAGS = -w -lSDL2 -lGL -lGLU -lGLEW
+FLAGS = -w -lSDL2 -lSDL2_image -lGL -lGLU -lGLEW
 
 #OBJ_NAME specifies the name of our exectuable
 OBJ_NAME = insanity

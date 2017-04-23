@@ -28,8 +28,34 @@ bool Gviewer::initGL()
 	bool success = true;
 	GLenum error = GL_NO_ERROR;
 
+	
+	// 	LOAD RESOURCES
+	// Textures
+	IMG_Init(IMG_INIT_PNG);
+	loadTexture("box.png");
+
+	for (int i = 0; i<textures.size(); i++){
+		textureid.push_back(-1);
+		glGenTextures(1, &textureid[i]);
+		glBindTexture(GL_TEXTURE_2D, textureid[i]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D,
+			0, // level, 0=base, no minimap
+			GL_RGBA,
+			textures[i]->w,
+			textures[i]->h,
+			0,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			textures[i]->pixels
+		);
+		SDL_FreeSurface(textures[i]);
+	}
+
+	
+	glEnable(GL_DEPTH_TEST);
 	// Clear screen
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Swap back and front buffer
 	//SDL_GL_SwapWindow(gWindow);
@@ -171,8 +197,8 @@ bool Gviewer::initGL()
 			glUseProgram(gProgramID);
 			// Send model-view-projection matrix
 
-			glm::vec2 rotation = glm::vec2(1.0f,1.0f);
-			viewMatrix = doView(0.0f, rotation);
+			float angle = SDL_GetTicks() / 1000.0 * 15;
+			viewMatrix = doView(0.0f, angle);
 
 
 			gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
@@ -182,9 +208,13 @@ bool Gviewer::initGL()
 				return false;
 			}
 	
+			uniform_mytexture = glGetUniformLocation(gProgramID, "tex");
+			// Check if ID was received
+			if (uniform_mytexture == -1){
+				printf("Could not bind uniform_mytexture.");
+				return false;
+			}
 
-			// Send matrix data
-			glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 			glUseProgram(NULL);
 
 
@@ -216,41 +246,55 @@ void Gviewer::handleKeys(unsigned char key, int x, int y){
 }
 
 
+void Gviewer::render()
+{
+	//Clear color buffer
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-void Gviewer::render(){
-  //Clear color buffer
-  glClear( GL_COLOR_BUFFER_BIT );
-  glClearColor(0.5, 0.5, 1.0, 1.0);
+	glClearColor(0.5, 0.5, 1.0, 1.0);
 
-  glm::vec2 rotation = glm::vec2(1.0f,1.0f);
-  viewMatrix = doView(0.0f, rotation);
-
-//Render quad
-  if( gRenderQuad )
-  {
-
-      // Bind program
-      glUseProgram(gProgramID);
-
-      // Enable vertex position
-      glEnableVertexAttribArray(gVertexPos3DLocation);
-
-      // Set vertex data
-      glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-      glVertexAttribPointer(gVertexPos3DLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-
-      // Set index data and Render
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
-      glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, NULL);
-
-      // Disable vertex position
-      glDisableVertexAttribArray(gVertexPos3DLocation);
-
-      // Unbind program
-      glUseProgram(NULL);
+	// Rotate view
+	float angle = SDL_GetTicks() / 1000.0 * 40;
+	viewMatrix = doView(0.0f, angle);
 
 
-  }
+
+
+	//Render quad
+	if( gRenderQuad )
+	{
+
+		// Bind program
+		glUseProgram(gProgramID);
+
+		// Bind textures
+
+		for (int i=0; i<textures.size(); i++){
+			glActiveTexture(GL_TEXTURE0 + i);
+			glUniform1i(uniform_mytexture, i);
+			glBindTexture(GL_TEXTURE_2D, textureid[i]);
+		}
+
+		// Enable vertex position
+		glEnableVertexAttribArray(gVertexPos3DLocation);
+		glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+		// Set vertex data
+		glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+		glVertexAttribPointer(gVertexPos3DLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+
+		// Set index data and Render
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
+		int bufsize; glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufsize);
+		glDrawElements(GL_TRIANGLE_FAN, bufsize/sizeof(GLuint), GL_UNSIGNED_INT, NULL);
+
+		// Disable vertex position
+		glDisableVertexAttribArray(gVertexPos3DLocation);
+
+		// Unbind program
+		glUseProgram(NULL);
+
+
+	}
 
 
   //Check for error
@@ -282,6 +326,15 @@ void Gviewer::handleEvent(SDL_Event * event)
     }
 }
 
+
+void Gviewer::close(){
+	
+	for (int i=0; i<textures.size(); i++){
+		glDeleteTextures(1, &textureid[i]);
+	}
+}
+
+
 void Gviewer::resize(){
     float asratio;
 
@@ -305,15 +358,18 @@ void Gviewer::resize(){
 }
 
 
-glm::mat4 Gviewer::doView(float Translate, glm::vec2 const & Rotate)
+glm::mat4 Gviewer::doView(float Translate, float angle)
 {
     glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    //glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-    glm::mat4 View = glm::lookAt(glm::vec3(5.0, 5.0, 5.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-    View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-    View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 View = glm::lookAt(glm::vec3(2.0, 2.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+
+    glm::vec3 axis_y(0,1,0);
+    glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
+
+//    View = glm::rotate(View, anim, glm::vec3(-1.0f, 0.0f, 0.0f));
+//    View = glm::rotate(View, anim, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-    return Projection * View * Model;
+    return Projection * View * Model * anim;
 }
 
 void Gviewer::printProgramLog( GLuint program )
@@ -346,6 +402,25 @@ void Gviewer::printProgramLog( GLuint program )
     {
         printf( "Name %d is not a program\n", program );
     }
+}
+
+
+
+// Returns texture id
+int Gviewer::loadTexture(std::string filename){
+	int tex_idx;
+	
+	// Load image
+	SDL_Surface * current = IMG_Load(filename.c_str());
+	if (current == NULL){
+		printf("Failed to load texture %s : %s", filename.c_str(), SDL_GetError());
+		return -1;
+	}
+	else
+	{
+		textures.push_back(current);
+	}
+	
 }
 
 

@@ -3,10 +3,12 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <GL/glew.h>
 #include <GL/glu.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_image.h>
 #include <glm/vec3.hpp> // glm::vec3
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
@@ -38,6 +40,12 @@ class Gviewer
     float ZMIN,ZMAX,DIM,th,ph;
     glm::mat4 viewMatrix;
 
+    // Game files
+    std::vector <SDL_Surface*> textures;
+    std::vector <GLuint> textureid;
+    GLint uniform_mytexture;
+
+
     Gviewer();
 
 
@@ -62,8 +70,9 @@ class Gviewer
     // Resizes window
     void resize();
 
-    glm::mat4 doView(float Translate, glm::vec2 const & Rotate);
+    glm::mat4 doView(float Translate, float angle);
 
+    int loadTexture(std::string filename);
 
     //Shader loading utility programs
     void printProgramLog( GLuint program );
