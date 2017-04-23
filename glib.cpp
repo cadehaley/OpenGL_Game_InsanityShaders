@@ -137,53 +137,57 @@ bool Gviewer::initGL()
 		    success = false;
 		  }
 		  else{
-		      // Now attach and link
-
-		      // Get transformation matrix location
-		      gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
-		      if (gViewMatrixLocation == -1){
-		      	printf("gViewMatrixLocation is unused or is not a valid glsl program variable.\n");
-			return false;
-		      }
-
-		      // Get vertex attribute location
-		      gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
-		      if (gVertexPos3DLocation == -1){
-			printf("LVertexPos2d is unused or is not a valid glsl program variable.\n");
-			success = false;
-		      }
-		      else{
-			    // Now that it is linked, send the array data
-
-			    glm::vec2 rotation = glm::vec2(1.0f, 1.0f);
-
-			    viewMatrix = doView(0.0f, rotation);
-
-			    glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+			  // Now attach and link
+			  
+			//VBO data
+			GLfloat vertexData[] =
+			{
+			    -0.5f, -0.5f, 0.0f,
+			     0.5f, -0.5f, 0.0f,
+			     0.5f,  0.5f, 0.0f,
+			    -0.5f,  0.5f, 0.0f
+			};
 
 
-			    //VBO data
-			    GLfloat vertexData[] =
-			    {
-				-0.5f, -0.5f, 0.0f,
-				 0.5f, -0.5f, 0.0f,
-				 0.5f,  0.5f, 0.0f,
-				-0.5f,  0.5f, 0.0f
-			    };
+			GLuint indexData[] = { 0, 1, 2, 3 };
+
+			// Create VBO
+			glGenBuffers(1, &gVBO);
+			glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 
 
-			    GLuint indexData[] = { 0, 1, 2, 3 };
+		       gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
+		       if (gVertexPos3DLocation == -1){
+				printf("LVertexPos2d is unused or is not a valid glsl program variable.\n");
+				return false;
+		       }
 
-			    // Create VBO
-			    glGenBuffers(1, &gVBO);
-			    glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-			    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+			// Create IBO
+			glGenBuffers(1, &gIBO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
 
-			    // Create IBO
-			    glGenBuffers(1, &gIBO);
-			    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
-			    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
-		      }
+			glUseProgram(gProgramID);
+			// Send model-view-projection matrix
+
+			glm::vec2 rotation = glm::vec2(1.0f,1.0f);
+			viewMatrix = doView(0.0f, rotation);
+
+
+			gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
+			// Check if ID was received
+			if (gViewMatrixLocation == -1){
+				printf("Could not bind gViewMatrixLocation uniform.");
+				return false;
+			}
+	
+
+			// Send matrix data
+			glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+			glUseProgram(NULL);
+
+
 		  }
 	      }
 	  }
@@ -218,7 +222,10 @@ void Gviewer::render(){
   glClear( GL_COLOR_BUFFER_BIT );
   glClearColor(0.5, 0.5, 1.0, 1.0);
 
-  //Render quad
+  glm::vec2 rotation = glm::vec2(1.0f,1.0f);
+  viewMatrix = doView(0.0f, rotation);
+
+//Render quad
   if( gRenderQuad )
   {
 
@@ -302,7 +309,7 @@ glm::mat4 Gviewer::doView(float Translate, glm::vec2 const & Rotate)
 {
     glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.f);
     //glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-    glm::mat4 View = glm::lookAt(glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 View = glm::lookAt(glm::vec3(5.0, 5.0, 5.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
     View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
