@@ -36,6 +36,7 @@ class Gviewer
     GLint gVertexPos3DLocation;
     GLuint gVBO;
     GLuint gIBO;
+
     int FOV;
     float ZMIN,ZMAX,DIM,th,ph;
     glm::mat4 viewMatrix;
@@ -43,8 +44,8 @@ class Gviewer
     // Game files
     std::vector <SDL_Surface*> textures;
     std::vector <GLuint> textureid;
-    GLint uniform_mytexture;
-
+    GLint uniform_mytexture, attribute_texcoord;
+    GLuint vbo_plane_texcoords;
 
     Gviewer();
 

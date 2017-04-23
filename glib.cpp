@@ -31,8 +31,8 @@ bool Gviewer::initGL()
 	
 	// 	LOAD RESOURCES
 	// Textures
-	IMG_Init(IMG_INIT_PNG);
-	loadTexture("box.png");
+	IMG_Init(IMG_INIT_JPG);
+	loadTexture("box.jpg");
 
 	for (int i = 0; i<textures.size(); i++){
 		textureid.push_back(-1);
@@ -164,7 +164,9 @@ bool Gviewer::initGL()
 		  }
 		  else{
 			  // Now attach and link
-			  
+			
+			// VERTEX DATA
+
 			//VBO data
 			GLfloat vertexData[] =
 			{
@@ -181,6 +183,18 @@ bool Gviewer::initGL()
 			glGenBuffers(1, &gVBO);
 			glBindBuffer(GL_ARRAY_BUFFER, gVBO);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+
+			// TEXTURE COORDINATES
+			GLfloat plane_texcoords[] = {
+				0.0, 0.0,
+				1.0, 0.0,
+				1.0, 1.0,
+				0.0, 1.0,
+			};
+
+			glGenBuffers(1, &vbo_plane_texcoords);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_plane_texcoords);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(plane_texcoords), plane_texcoords, GL_STATIC_DRAW);
 
 
 		       gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
@@ -212,6 +226,14 @@ bool Gviewer::initGL()
 			// Check if ID was received
 			if (uniform_mytexture == -1){
 				printf("Could not bind uniform_mytexture.");
+				return false;
+			}
+
+
+			attribute_texcoord = glGetAttribLocation(gProgramID, "texcoord");
+			// Check if ID was received
+			if (attribute_texcoord == -1){
+				printf("Could not bind attribute_texcoord.");
 				return false;
 			}
 
@@ -275,12 +297,20 @@ void Gviewer::render()
 			glBindTexture(GL_TEXTURE_2D, textureid[i]);
 		}
 
+		// VERTEX ARRAYS
 		// Enable vertex position
 		glEnableVertexAttribArray(gVertexPos3DLocation);
 		glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 		// Set vertex data
 		glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-		glVertexAttribPointer(gVertexPos3DLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+		glVertexAttribPointer(gVertexPos3DLocation, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		
+
+		// TEX COORDINATE ARRAYS
+		// Enable vertex position
+		glEnableVertexAttribArray(attribute_texcoord);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_plane_texcoords);
+		glVertexAttribPointer(attribute_texcoord, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 		// Set index data and Render
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
@@ -342,7 +372,7 @@ void Gviewer::resize(){
 
     asratio = width / (double) height;
 
-    glViewport(0, 0, width, height*asratio); //adjust GL viewport
+    glViewport(0, 0, width, height); //adjust GL viewport
 
 /*
     glMatrixMode(GL_PROJECTION);
