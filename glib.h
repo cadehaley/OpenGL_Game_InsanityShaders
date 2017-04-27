@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -35,6 +36,7 @@ class Gviewer
     GLint gViewMatrixLocation;
     GLint gVertexPos3DLocation;
     GLuint gVBO;
+    GLuint gNBO;
     GLuint gIBO;
 
     int FOV;
@@ -76,6 +78,9 @@ class Gviewer
     bool loadShaders();
 
     int loadTexture(std::string filename);
+
+
+    void loadObj(std::string filename, std::vector<glm::vec4> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements);
 
     //Shader loading utility programs
     void printProgramLog( GLuint program );

@@ -29,6 +29,21 @@ bool Gviewer::initGL()
 	GLenum error = GL_NO_ERROR;
 
 	
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	// Clear screen
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+
+
+	success = loadShaders();
+
+	if (!success)
+		return false;
+
+
+
 	// 	LOAD RESOURCES
 	// Textures
 	glEnable(GL_TEXTURE_2D);
@@ -62,25 +77,22 @@ bool Gviewer::initGL()
 	}
 
 	
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
-	// Clear screen
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-
-
-	success = loadShaders();
-
-	if (!success)
-		return false;
-	
-
-
-	  // Now attach and link
 		
-	// VERTEX DATA
+	// LOAD MODEL DATA
 
+	std::vector<glm::vec4> suzanne_vertices;
+	std::vector<glm::vec3> suzanne_normals;
+	std::vector<GLushort> suzanne_elements;
+	std::string path = "models/suzanne.obj";
+
+	loadObj(path, suzanne_vertices, suzanne_normals, suzanne_elements);
+
+
+	//printf("Made it here. a=%d b=%d c=%d",a,b,c);
+	printf("Loaded OBJ");
+
+
+/*
 	//VBO data
 	GLfloat vertexData[] =
 	{
@@ -121,6 +133,24 @@ bool Gviewer::initGL()
 	glGenBuffers(1, &gIBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
+*/
+	
+
+	// Send Vertex buffer
+	glEnableVertexAttribArray(gVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+	glVertexAttribPointer(
+		gVBO,		// attribute
+		4,		// # elements/vertex
+		GL_FLOAT,	// type
+		GL_FALSE,	// Take as-is
+		0,		// No extra data between each pos
+		0		// First element offset
+	);
+
+	// Send Normal buffer
+	
+
 
 	glUseProgram(gProgramID);
 	// Send model-view-projection matrix
@@ -128,13 +158,7 @@ bool Gviewer::initGL()
 	float angle = SDL_GetTicks() / 1000.0 * 15;
 	viewMatrix = doView(0.0f, angle);
 
-
-	gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
-	// Check if ID was received
-	if (gViewMatrixLocation == -1){
-		printf("Could not bind gViewMatrixLocation uniform.");
-		return false;
-	}
+/*
 
 	uniform_mytexture = glGetUniformLocation(gProgramID, "tex");
 	// Check if ID was received
@@ -148,6 +172,14 @@ bool Gviewer::initGL()
 	// Check if ID was received
 	if (attribute_texcoord == -1){
 		printf("Could not bind attribute_texcoord.");
+		return false;
+	}
+
+*/
+	gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
+	// Check if ID was received
+	if (gViewMatrixLocation == -1){
+		printf("Could not bind gViewMatrixLocation uniform.");
 		return false;
 	}
 
@@ -476,6 +508,86 @@ bool Gviewer::loadShaders()
 	}	
 	return true;
 }
+
+
+
+
+void Gviewer::loadObj(std::string filename, std::vector<glm::vec4> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements)
+{
+	std::ifstream in(filename.c_str(), std::ios::in);
+	if (!in)
+	{
+		std::cerr << "Cannot open " << filename << std::endl; exit(1);
+	}
+
+	std::string line;
+	while (getline(in, line))
+	{
+		if (line.substr(0,2) == "v ")
+		{
+			std::istringstream s(line.substr(2));
+			glm::vec4 v; s >> v.x; s >> v.y; s >> v.z; v.w = 1.0f;
+			vertices.push_back(v);
+		}
+		else if (line.substr(0,2) == "f ")
+		{	
+			GLushort a,b,c;
+			std::vector<std::string> vert_inds;
+
+			// Parse line
+			bool match = false;
+			bool prev_match = false;
+			std::string seg = "";
+			for (int i = 0; i< line.size(); i++){
+				match = (line[i] >= 48 && line[i] <= 57);
+				if ((!match && prev_match) || (i == line.size()-1)){
+					vert_inds.push_back(seg);
+					seg = "";
+					prev_match = false;
+				}
+				else if (match){
+					seg = seg + line[i];
+					prev_match = true;
+				}	
+			}
+
+
+			a = stoi(vert_inds[0]); b = stoi(vert_inds[2]); c = stoi(vert_inds[4]);
+			a--; b--; c--;
+		
+		elements.push_back(a); elements.push_back(b); elements.push_back(c);
+		}
+		else if (line[0] == '#')
+		{
+			/* ignoring this line */
+		}
+		else
+		{
+			/* ignoring this line */
+		}
+
+	}
+
+	normals.resize(vertices.size(), glm::vec3(0.0, 0.0, 0.0));
+
+
+	for (int i = 0; i < elements.size(); i+=3)
+	{
+		GLushort ia = elements[i];
+		GLushort ib = elements[i+1];
+		GLushort ic = elements[i+2];
+	
+		glm::vec3 normal = glm::normalize(glm::cross(
+		glm::vec3(vertices[ib]) - glm::vec3(vertices[ia]),
+		glm::vec3(vertices[ic]) - glm::vec3(vertices[ia])));
+		normals[ia] = normals[ib] = normals[ic] = normal;
+
+	}
+
+}
+
+
+
 
 
 void Gviewer::printShaderLog( GLuint shader )
