@@ -63,195 +63,100 @@ bool Gviewer::initGL()
 
 	
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
 	// Clear screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// Swap back and front buffer
-	//SDL_GL_SwapWindow(gWindow);
-
-
-	// Generate program
-	gProgramID = glCreateProgram();
-
-	// Now the vertex shader
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	
 
 
-	// Load vert shader in from file
-	std::string line = "";
-	std::string vert_string = "";
-	std::ifstream vertshader ("main.vert");
-	if (vertshader.is_open()){
-		while ( getline (vertshader, line)){
-			vert_string += line + '\n';
-		}
-		vertshader.close();
-	}
-	else{
-		printf("Could not load main.vert");
-		success = false;
-	}
-	const GLchar* vertexShaderSource[vert_string.length()] = {vert_string.c_str()};
+	success = loadShaders();
+
+	if (!success)
+		return false;
 	
 
 
+	  // Now attach and link
+		
+	// VERTEX DATA
 
-	//Set vertex source
-	glShaderSource( vertexShader, 1, vertexShaderSource, NULL );
-
-	//Compile vertex source
-	glCompileShader( vertexShader );
-
-	//Check vertex shader for errors
-	GLint vShaderCompiled = GL_FALSE;
-	glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &vShaderCompiled );
-	if( vShaderCompiled != GL_TRUE )
+	//VBO data
+	GLfloat vertexData[] =
 	{
-	    printf( "Unable to compile vertex shader %d!\n", vertexShader );
-	    printShaderLog( vertexShader );
-	    success = false;
+	    -0.5f, -0.5f, 0.0f,
+	     0.5f, -0.5f, 0.0f,
+	     0.5f,  0.5f, 0.0f,
+	    -0.5f,  0.5f, 0.0f
+	};
+
+
+	GLuint indexData[] = { 0, 1, 2, 3 };
+
+	// Create VBO
+	glGenBuffers(1, &gVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+
+	// TEXTURE COORDINATES
+	GLfloat plane_texcoords[] = {
+		0.0, 0.0,
+		1.0, 0.0,
+		1.0, 1.0,
+		0.0, 1.0,
+	};
+
+	glGenBuffers(1, &vbo_plane_texcoords);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_plane_texcoords);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(plane_texcoords), plane_texcoords, GL_STATIC_DRAW);
+
+
+       gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
+       if (gVertexPos3DLocation == -1){
+		printf("LVertexPos2d is unused or is not a valid glsl program variable.\n");
+		return false;
+       }
+
+	// Create IBO
+	glGenBuffers(1, &gIBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
+
+	glUseProgram(gProgramID);
+	// Send model-view-projection matrix
+
+	float angle = SDL_GetTicks() / 1000.0 * 15;
+	viewMatrix = doView(0.0f, angle);
+
+
+	gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
+	// Check if ID was received
+	if (gViewMatrixLocation == -1){
+		printf("Could not bind gViewMatrixLocation uniform.");
+		return false;
 	}
-	else
-		{
-		// Attach vertex shader to program
-		glAttachShader(gProgramID, vertexShader);
 
-		// Create fragment shader
-		GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-			
-		    
-
-		// Load fragment shader in from file
-		line = "";
-		std::string frag_string = "";
-		std::ifstream fragshader ("main.frag");
-		if (fragshader.is_open()){
-			while ( getline (fragshader, line)){
-				frag_string += line + '\n';
-			}
-			fragshader.close();
-		}
-		else{
-			printf("Could not load main.frag");
-			success = false;
-		}
-		const GLchar* fragmentShaderSource[frag_string.length()] = {frag_string.c_str()};
+	uniform_mytexture = glGetUniformLocation(gProgramID, "tex");
+	// Check if ID was received
+	if (uniform_mytexture == -1){
+		printf("Could not bind uniform_mytexture.");
+		return false;
+	}
 
 
+	attribute_texcoord = glGetAttribLocation(gProgramID, "texcoord");
+	// Check if ID was received
+	if (attribute_texcoord == -1){
+		printf("Could not bind attribute_texcoord.");
+		return false;
+	}
+
+	glUseProgram(NULL);
 
 
-		// Set fragment source
-		glShaderSource(fragmentShader, 1, fragmentShaderSource, NULL);
-
-		// Compile source
-		glCompileShader(fragmentShader);
-
-		// Error check fragment shader
-		GLint fShaderCompiled = GL_FALSE;
-		glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &fShaderCompiled );
-		if( fShaderCompiled != GL_TRUE )
-		{
-		    printf( "Unable to compile fragment shader %d!\n", fragmentShader );
-		    printShaderLog( fragmentShader );
-		    success = false;
-		}
-		else{
-		  // Attach fragment shader to program
-		  glAttachShader( gProgramID, fragmentShader );
-
-		  // Link program
-		  glLinkProgram( gProgramID );
-
-		  // Error Check
-		  GLint programSuccess = GL_TRUE;
-		  glGetProgramiv( gProgramID, GL_LINK_STATUS, &programSuccess);
-		  if (programSuccess != GL_TRUE){
-		    printf( "Error linking program %d!\n", gProgramID);
-		    printProgramLog(gProgramID);
-		    success = false;
-		  }
-		  else{
-			  // Now attach and link
-			
-			// VERTEX DATA
-
-			//VBO data
-			GLfloat vertexData[] =
-			{
-			    -0.5f, -0.5f, 0.0f,
-			     0.5f, -0.5f, 0.0f,
-			     0.5f,  0.5f, 0.0f,
-			    -0.5f,  0.5f, 0.0f
-			};
-
-
-			GLuint indexData[] = { 0, 1, 2, 3 };
-
-			// Create VBO
-			glGenBuffers(1, &gVBO);
-			glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-
-			// TEXTURE COORDINATES
-			GLfloat plane_texcoords[] = {
-				0.0, 0.0,
-				1.0, 0.0,
-				1.0, 1.0,
-				0.0, 1.0,
-			};
-
-			glGenBuffers(1, &vbo_plane_texcoords);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_plane_texcoords);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(plane_texcoords), plane_texcoords, GL_STATIC_DRAW);
-
-
-		       gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
-		       if (gVertexPos3DLocation == -1){
-				printf("LVertexPos2d is unused or is not a valid glsl program variable.\n");
-				return false;
-		       }
-
-			// Create IBO
-			glGenBuffers(1, &gIBO);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
-
-			glUseProgram(gProgramID);
-			// Send model-view-projection matrix
-
-			float angle = SDL_GetTicks() / 1000.0 * 15;
-			viewMatrix = doView(0.0f, angle);
-
-
-			gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
-			// Check if ID was received
-			if (gViewMatrixLocation == -1){
-				printf("Could not bind gViewMatrixLocation uniform.");
-				return false;
-			}
-	
-			uniform_mytexture = glGetUniformLocation(gProgramID, "tex");
-			// Check if ID was received
-			if (uniform_mytexture == -1){
-				printf("Could not bind uniform_mytexture.");
-				return false;
-			}
-
-
-			attribute_texcoord = glGetAttribLocation(gProgramID, "texcoord");
-			// Check if ID was received
-			if (attribute_texcoord == -1){
-				printf("Could not bind attribute_texcoord.");
-				return false;
-			}
-
-			glUseProgram(NULL);
-
-
-		  }
-	      }
-	  }
+	  
+      
+  
 
 	  std::cout << glGetString(GL_VERSION) << std::endl;
 	  //Check for error
@@ -399,8 +304,8 @@ void Gviewer::resize(){
 
 glm::mat4 Gviewer::doView(float Translate, float angle)
 {
-    glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    glm::mat4 View = glm::lookAt(glm::vec3(2.0, 2.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 Projection = glm::perspective(glm::radians(80.0f), 4.0f / 3.0f, 0.1f, 100.f);
+    glm::mat4 View = glm::lookAt(glm::vec3(0.3, 0.3, 0.3), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
     glm::vec3 axis_y(0,1,0);
     glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
@@ -462,6 +367,115 @@ int Gviewer::loadTexture(std::string filename){
 	
 }
 
+
+
+
+bool Gviewer::loadShaders()
+{
+	bool success = false;	
+
+	// Generate program
+	gProgramID = glCreateProgram();
+
+	// Now the vertex shader
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	
+
+
+	// Load vert shader in from file
+	std::string line = "";
+	std::string vert_string = "";
+	std::ifstream vertshader ("main.vert");
+	if (vertshader.is_open()){
+		while ( getline (vertshader, line)){
+			vert_string += line + '\n';
+		}
+		vertshader.close();
+	}
+	else{
+		printf("Could not load main.vert");
+		success = false;
+	}
+	const GLchar* vertexShaderSource[vert_string.length()] = {vert_string.c_str()};
+	
+
+
+
+	//Set vertex source
+	glShaderSource( vertexShader, 1, vertexShaderSource, NULL );
+
+	//Compile vertex source
+	glCompileShader( vertexShader );
+
+	//Check vertex shader for errors
+	GLint vShaderCompiled = GL_FALSE;
+	glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &vShaderCompiled );
+	if( vShaderCompiled != GL_TRUE )
+	{
+	    printf( "Unable to compile vertex shader %d!\n", vertexShader );
+	    printShaderLog( vertexShader );
+	    return false;
+	}
+	// Attach vertex shader to program
+	glAttachShader(gProgramID, vertexShader);
+
+	// Create fragment shader
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+		
+	    
+
+	// Load fragment shader in from file
+	line = "";
+	std::string frag_string = "";
+	std::ifstream fragshader ("main.frag");
+	if (fragshader.is_open()){
+		while ( getline (fragshader, line)){
+			frag_string += line + '\n';
+		}
+		fragshader.close();
+	}
+	else{
+		printf("Could not load main.frag");
+		success = false;
+	}
+	const GLchar* fragmentShaderSource[frag_string.length()] = {frag_string.c_str()};
+
+
+
+
+	// Set fragment source
+	glShaderSource(fragmentShader, 1, fragmentShaderSource, NULL);
+
+	// Compile source
+	glCompileShader(fragmentShader);
+
+	// Error check fragment shader
+	GLint fShaderCompiled = GL_FALSE;
+	glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &fShaderCompiled );
+	if( fShaderCompiled != GL_TRUE )
+	{
+	    printf( "Unable to compile fragment shader %d!\n", fragmentShader );
+	    printShaderLog( fragmentShader );
+	    success = false;
+	}
+	else{
+	  // Attach fragment shader to program
+	  glAttachShader( gProgramID, fragmentShader );
+
+	  // Link program
+	  glLinkProgram( gProgramID );
+
+	  // Error Check
+	  GLint programSuccess = GL_TRUE;
+	  glGetProgramiv( gProgramID, GL_LINK_STATUS, &programSuccess);
+	  if (programSuccess != GL_TRUE){
+	    printf( "Error linking program %d!\n", gProgramID);
+	    printProgramLog(gProgramID);
+	    return false;
+	  }
+	}	
+	return true;
+}
 
 
 void Gviewer::printShaderLog( GLuint shader )

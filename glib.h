@@ -73,6 +73,8 @@ class Gviewer
 
     glm::mat4 doView(float Translate, float angle);
 
+    bool loadShaders();
+
     int loadTexture(std::string filename);
 
     //Shader loading utility programs
