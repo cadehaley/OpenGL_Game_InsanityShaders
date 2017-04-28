@@ -35,6 +35,7 @@ class Gviewer
     GLuint gProgramID;
     GLint gViewMatrixLocation;
     GLint gVertexPos3DLocation;
+    GLint gNormal3DLocation;
     GLuint gVBO;
     GLuint gNBO;
     GLuint gIBO;
@@ -80,7 +81,7 @@ class Gviewer
     int loadTexture(std::string filename);
 
 
-    void loadObj(std::string filename, std::vector<glm::vec4> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements);
+    void loadObj(std::string filename, std::vector<GLfloat> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements);
 
     //Shader loading utility programs
     void printProgramLog( GLuint program );

@@ -30,7 +30,7 @@ bool Gviewer::initGL()
 
 	
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+//	glEnable(GL_CULL_FACE);
 
 	// Clear screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -80,16 +80,35 @@ bool Gviewer::initGL()
 		
 	// LOAD MODEL DATA
 
-	std::vector<glm::vec4> suzanne_vertices;
+	std::vector<GLfloat> suzanne_vertices;
 	std::vector<glm::vec3> suzanne_normals;
 	std::vector<GLushort> suzanne_elements;
 	std::string path = "models/suzanne.obj";
 
 	loadObj(path, suzanne_vertices, suzanne_normals, suzanne_elements);
 
+	//~suzanne_elements;
+	//for (int i = 0; i<20; i++){
+	//	printf("\n%f",*(&suzanne_vertices[0]+(i)));
+	//	printf("\n    %f",suzanne_vertices[i]);
+	//	printf("\n Array size: %d",(&suzanne_elements[1] - &suzanne_elements[0]));
+	//	printf("GLfloat size: %d",sizeof(GLfloat));
+	//}
+
+	
+
+//printf("Made it here");
+//std::cin.ignore();
+
+	//glm::vec3 v1 = glm::vec3(0.0,0.0,0.0);
+	//glm::vec3 v2 = glm::vec3(1.0,1.0,0.0);
+	//glm::vec3 v3 = glm::vec3(0.0,1.0,0.0);
+	//GLushort e1 = 0; GLushort e2 = 1; GLushort e3 = 2;
+	//suzanne_vertices.push_back(v1);suzanne_vertices.push_back(v2);suzanne_vertices.push_back(v3);
+	//suzanne_elements.push_back(e1);suzanne_elements.push_back(e2);suzanne_elements.push_back(e3);
 
 	//printf("Made it here. a=%d b=%d c=%d",a,b,c);
-	printf("Loaded OBJ");
+
 
 
 /*
@@ -122,41 +141,88 @@ bool Gviewer::initGL()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_plane_texcoords);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(plane_texcoords), plane_texcoords, GL_STATIC_DRAW);
 
-
-       gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
-       if (gVertexPos3DLocation == -1){
-		printf("LVertexPos2d is unused or is not a valid glsl program variable.\n");
-		return false;
-       }
-
-	// Create IBO
-	glGenBuffers(1, &gIBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
 */
-	
-
-	// Send Vertex buffer
-	glEnableVertexAttribArray(gVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-	glVertexAttribPointer(
-		gVBO,		// attribute
-		4,		// # elements/vertex
-		GL_FLOAT,	// type
-		GL_FALSE,	// Take as-is
-		0,		// No extra data between each pos
-		0		// First element offset
-	);
-
-	// Send Normal buffer
-	
 
 
 	glUseProgram(gProgramID);
-	// Send model-view-projection matrix
 
-	float angle = SDL_GetTicks() / 1000.0 * 15;
-	viewMatrix = doView(0.0f, angle);
+	// VBO shader location	
+	gVertexPos3DLocation = glGetAttribLocation(gProgramID, "LVertexPos3D");
+       if (gVertexPos3DLocation == -1){
+		printf("LVertexPos3D is unused or is not a valid glsl program variable.\n");
+		return false;
+       }
+	// Send Vertex buffer
+	glGenBuffers(1, &gVBO);	
+	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+	glBufferData(
+		GL_ARRAY_BUFFER,
+		sizeof(GLfloat) * suzanne_vertices.size(),	// GLfloat elements
+		&suzanne_vertices[0],
+		GL_STATIC_DRAW
+	);
+//	glVertexAttribPointer(
+//		gVertexPos3DLocation,	// attribute
+//		4,			// # elements/vertex
+//		GL_FLOAT,		// type
+//		GL_FALSE,		// Take as-is
+//		0,			// No extra data between each pos
+//		0			// First element offset
+//	);
+
+	
+/*  NEW
+
+	// NBO shader location
+	gNormal3DLocation = glGetAttribLocation(gProgramID, "LNormal3D");
+       if (gNormal3DLocation == -1){
+		printf("LNormal3D is unused or is not a valid glsl program variable.\n");
+		return false;
+       }
+	// Send normal buffer
+	glEnableVertexAttribArray(gNormal3DLocation);
+	glBindBuffer(GL_ARRAY_BUFFER, gNBO);
+	glVertexAttribPointer(
+		gNormal3DLocation,
+		3,			// # elements
+		GL_FLOAT,
+		GL_FALSE,
+		0,
+		0
+	);
+*/
+	// Gen and send IBO
+	glGenBuffers(1, &gIBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
+	glBufferData(
+		GL_ELEMENT_ARRAY_BUFFER, 
+		(sizeof(GLushort) * suzanne_elements.size()),	//GLushort elements
+		&suzanne_elements[0], 
+		GL_STATIC_DRAW
+	);
+
+
+
+
+	// Model-view-projection matrix
+	gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
+	// Check if ID was received
+	if (gViewMatrixLocation == -1){
+		printf("Could not bind gViewMatrixLocation uniform.");
+		return false;
+	}
+	//float angle = SDL_GetTicks() / 1000.0 * 15;
+	//viewMatrix = doView(0.0f, angle);
+
+	// * Then redraw in render * //
+
+
+
+	
+
+
+
+
 
 /*
 
@@ -176,12 +242,6 @@ bool Gviewer::initGL()
 	}
 
 */
-	gViewMatrixLocation = glGetUniformLocation(gProgramID, "mvp");
-	// Check if ID was received
-	if (gViewMatrixLocation == -1){
-		printf("Could not bind gViewMatrixLocation uniform.");
-		return false;
-	}
 
 	glUseProgram(NULL);
 
@@ -199,7 +259,6 @@ bool Gviewer::initGL()
 	      printf( "Error initializing OpenGL viewer! %s\n", gluErrorString(error) );
 	      success = false;
 	  }
-
 
 	  return success;
 }
@@ -236,32 +295,42 @@ void Gviewer::render()
 		glUseProgram(gProgramID);
 
 		// Bind textures
-
+/*
 		for (int i=0; i<textures.size(); i++){
 			glActiveTexture(GL_TEXTURE0 + i);
 			glUniform1i(uniform_mytexture, i);
 			glBindTexture(GL_TEXTURE_2D, textureid[i]);
 		}
-
+*/
 		// VERTEX ARRAYS
 		// Enable vertex position
 		glEnableVertexAttribArray(gVertexPos3DLocation);
-		glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-		// Set vertex data
-		glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-		glVertexAttribPointer(gVertexPos3DLocation, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		
 
-		// TEX COORDINATE ARRAYS
+		// Set vertex data
+		glBindBuffer(GL_ARRAY_BUFFER, gVBO);		
+		glVertexAttribPointer(
+			gVertexPos3DLocation,	// attribute
+			3,			// # elements/vertex
+			GL_FLOAT,		// type
+			GL_FALSE,		// Take as-is
+			0,			// No extra data between each pos
+			0			// First element offset
+		);
+		
+		
+		glUniformMatrix4fv(gViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+		
+/*		// TEX COORDINATE ARRAYS
 		// Enable vertex position
 		glEnableVertexAttribArray(attribute_texcoord);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_plane_texcoords);
 		glVertexAttribPointer(attribute_texcoord, 2, GL_FLOAT, GL_FALSE, 0, 0);
+*/
+		// ELEMENT ARRAYS
 
-		// Set index data and Render
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
 		int bufsize; glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufsize);
-		glDrawElements(GL_TRIANGLE_FAN, bufsize/sizeof(GLuint), GL_UNSIGNED_INT, NULL);
+		glDrawElements(GL_TRIANGLES, bufsize/sizeof(GLushort), GL_UNSIGNED_SHORT, NULL);
 
 		// Disable vertex position
 		glDisableVertexAttribArray(gVertexPos3DLocation);
@@ -337,7 +406,7 @@ void Gviewer::resize(){
 glm::mat4 Gviewer::doView(float Translate, float angle)
 {
     glm::mat4 Projection = glm::perspective(glm::radians(80.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    glm::mat4 View = glm::lookAt(glm::vec3(0.3, 0.3, 0.3), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 View = glm::lookAt(glm::vec3(0.6, 0.6, 0.6), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
     glm::vec3 axis_y(0,1,0);
     glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
@@ -512,7 +581,7 @@ bool Gviewer::loadShaders()
 
 
 
-void Gviewer::loadObj(std::string filename, std::vector<glm::vec4> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements)
+void Gviewer::loadObj(std::string filename, std::vector<GLfloat> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements)
 {
 	std::ifstream in(filename.c_str(), std::ios::in);
 	if (!in)
@@ -526,8 +595,28 @@ void Gviewer::loadObj(std::string filename, std::vector<glm::vec4> &vertices, st
 		if (line.substr(0,2) == "v ")
 		{
 			std::istringstream s(line.substr(2));
-			glm::vec4 v; s >> v.x; s >> v.y; s >> v.z; v.w = 1.0f;
-			vertices.push_back(v);
+			GLfloat v;
+
+			// Parse line
+			bool match = false;
+			bool prev_match = false;
+			std::string seg = "";
+			for (int i = 0; i< line.size(); i++){
+				match = ((line[i] >= 48 && line[i] <= 57) || line[i] == 46 || line[i] == 45);
+				if ((!match && prev_match) || (i == line.size()-1)){
+					vertices.push_back(stof(seg));
+					seg = "";
+					prev_match = false;
+				}
+				else if (match){
+					seg = seg + line[i];
+					prev_match = true;
+				}	
+			}
+			//s >> v;  vertices.push_back(v);
+			//s >> v;  vertices.push_back(v);
+			//s >> v;  vertices.push_back(v);
+			
 		}
 		else if (line.substr(0,2) == "f ")
 		{	
