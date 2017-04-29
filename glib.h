@@ -47,8 +47,9 @@ class Gviewer
     // Game files
     std::vector <SDL_Surface*> textures;
     std::vector <GLuint> textureid;
-    GLint uniform_mytexture, attribute_texcoord;
-    GLuint vbo_plane_texcoords;
+    GLint gTexCoordLocation;
+    GLuint gTBO;
+    GLint uniform_mytexture;
 
     Gviewer();
 
@@ -81,7 +82,10 @@ class Gviewer
     int loadTexture(std::string filename);
 
 
-    void loadObj(std::string filename, std::vector<GLfloat> &vertices, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements);
+    void loadObj(std::string filename, std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvs, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements);
+
+
+    void parseLine(std::string line, std::vector<std::string> &vert_inds );
 
     //Shader loading utility programs
     void printProgramLog( GLuint program );

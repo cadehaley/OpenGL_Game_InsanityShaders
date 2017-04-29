@@ -1,6 +1,6 @@
 #version 140
 
-varying vec2 TextureCoord;
+in vec2 TextureCoord;
 uniform sampler2D tex;
 
 out vec4 LFragment; 
