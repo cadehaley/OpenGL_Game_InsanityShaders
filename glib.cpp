@@ -1,4 +1,5 @@
 #include "glib.h"
+#include <algorithm>
 
 Gviewer::Gviewer(){
   bpp = flags = gProgramID = gVBO = gIBO = 0;
@@ -88,14 +89,16 @@ bool Gviewer::initGL()
 
 	loadObj(path, suzanne_vertices, suzanne_uvs, suzanne_normals, suzanne_elements);
 
+/* DEBUG
 	//~suzanne_elements;
 	for (int i = 0; i<20; i++){
-		printf("\n%f",*(&suzanne_uvs[0]+(i*sizeof(GLfloat))));
-		//printf("\n    %f  %f  ",suzanne_uvs[i].x, suzanne_uvs[i].y);
+		printf("\nManual vals: %f",*(&suzanne_uvs[0]+i));
+		printf("\nAuto vals: %f", &suzanne_uvs[i]);
+		printf("\n    %f  %f  ",suzanne_uvs[i].x, suzanne_uvs[i].y);
 		//printf("\n Array size: %d",(&suzanne_elements[1] - &suzanne_elements[0]));
-		//printf("GLfloat size: %d",sizeof(GLfloat));
+		printf("GLfloat size: %d",sizeof(GLfloat));
 	}
-
+*/
 	
 
 //printf("Made it here");
@@ -171,7 +174,7 @@ bool Gviewer::initGL()
 	// Send Texcoord buffer
 	glGenBuffers(1, &gTBO);
 	glBindBuffer(GL_ARRAY_BUFFER, gTBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * suzanne_uvs.size(), &suzanne_uvs[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * suzanne_uvs.size(), &suzanne_uvs[0].x, GL_STATIC_DRAW);
 
 
 	// Send Vertex buffer
@@ -591,12 +594,12 @@ void Gviewer::loadObj(std::string filename, std::vector<glm::vec3> &vertices, st
 
 			if (results.size() != 2){std::cerr << "Failed to read OBJ vt"; exit(1);};
 			glm::vec2 uv;
-			uv.x = stof(results[0]); uv.y = stof(results[1]);
+			uv.x = stof(results[0]); uv.y = 1 - stof(results[1]);
 			file_uvs.push_back(uv);
 
 			
 		}
-		else if (line.substr(0,2) == "f ")
+		else if (line.substr(0,2) == "s ")
 		{
 			break;
 		}
@@ -611,7 +614,9 @@ void Gviewer::loadObj(std::string filename, std::vector<glm::vec3> &vertices, st
 	}
 	// Establish uv vectors and continue the loop
 	std::vector<std::vector<glm::vec2>> ordered_uvs(file_vertices.size());
-	std::vector<glm::vec2> index_offset;
+	// elem_mapping: .x = corresponding i in ordered_uvs .y = corresponding j
+	std::vector<glm::ivec2> elem_mapping;
+
 	while (getline(in, line))
 	{
 		if (line.substr(0,2) == "f ")
@@ -620,45 +625,48 @@ void Gviewer::loadObj(std::string filename, std::vector<glm::vec3> &vertices, st
 			std::vector<std::string> results;
 			parseLine(line, results);
 			GLushort a,b,c;
-			if (results.size() == 6){ // If OBJ has no UVs associated, is supported
+			if (results.size() == 6){ // If OBJ has no UVs associated, is not supported
 				// Load indices	
-				a = stoi(results[0]); b = stoi(results[2]); c = stoi(results[4]);
-				a--; b--; c--;
-				elements.push_back(a); elements.push_back(b); elements.push_back(c);
+				//a = stoi(results[0]); b = stoi(results[2]); c = stoi(results[4]);
+				//a--; b--; c--;
+				//elements.push_back(a); elements.push_back(b); elements.push_back(c);
+				printf("OBJ must have UVs and normals exported"); exit(1);
 			}
 			else if (results.size() == 9){ // If UVs are included	
 				// Load indices and UV coordinates
 				for (int i = 0; i<9; i+=3){
 					// Store indices
-					GLushort in_vert = stoi(results[i]); in_vert--;
-					elements.push_back(in_vert);
+					GLushort in_index = stoi(results[i]); in_index--;
+					elements.push_back(in_index);
 
 					// Get uv coord at that index
 					glm::vec2 in_coord = file_uvs[stoi(results[i+1]) - 1];
 
-					bool match = false;
-					int assoc_uvs = ordered_uvs[in_vert].size();
+					bool match = true;
+					int assoc_uvs = ordered_uvs[in_index].size();
 					if (assoc_uvs > 0)
 					{
 						// Check if the current coord is already loaded
+						match = false;
 						for (int j = 0; j<assoc_uvs; j++)
 						{
-							if (in_coord.x == ordered_uvs[in_vert][j].x
-							 && in_coord.y == ordered_uvs[in_vert][j].y)
+							if (in_coord.x == ordered_uvs[in_index][j].x
+							 && in_coord.y == ordered_uvs[in_index][j].y)
 							 {
 								match = true;
+								// Add mapping position
+								glm::ivec2 map = glm::ivec2(in_index,j);
+								elem_mapping.push_back(map);
 							 }
 						}
 					}
 					// Otherwise associate the uv coordinate with that vertex
 					if (assoc_uvs == 0 || !match)
 					{
-						ordered_uvs[in_vert].push_back(in_coord);	
-
-		//TODO: Get multi-coord working	//if (!match){
-						//	// Push back the elements index and value
-						//	index_offset.push_back(vec2(elements.size()-1,in_vert));
-						//}
+						ordered_uvs[in_index].push_back(in_coord);
+						// Add mapping position
+						glm::ivec2 map = glm::ivec2(in_index,assoc_uvs);
+						elem_mapping.push_back(map);
 					}
 				}
 			}
@@ -696,24 +704,52 @@ void Gviewer::loadObj(std::string filename, std::vector<glm::vec3> &vertices, st
 
 	}
 
+printf("\nelem_mapping size: %d elements size: %d ", elem_mapping.size(), elements.size());
+
+// Map element values to their absolute position in ordered_uvs
+for (int i = 0; i<elements.size(); i++){
+	int absolute_pos = 0;
+	for (int j = 0; j<elem_mapping[i].x; j++){
+		absolute_pos += ordered_uvs[j].size();
+	}
+	absolute_pos += elem_mapping[i].y;
+	elements[i] = absolute_pos;
+}
+
+
+
+
 	// In order to support multiple UV coords and normals per vertex
 	// Populate vectors with duplicate vertices by "flattening" 2d vectors
 
-	for (int i = 0; i<ordered_uvs.size(); i++)
-	{
-
-//		for (int j = 0; j<ordered_uvs[i].size(); j++){
-int j = 0;	uvs.push_back(glm::vec2(ordered_uvs[i][j].x, ordered_uvs[i][j].y));
+	for (int i = 0; i<ordered_uvs.size(); i++){
+		for (int j = 0; j<ordered_uvs[i].size(); j++){
+			uvs.push_back(ordered_uvs[i][j]);
 			// Duplicate vertices
-		vertices.push_back(file_vertices[i]);
-			
-//		}
-		
+			vertices.push_back(file_vertices[i]);	
+		}	
 	}
+//DEBUG
+	for (int i = 744; i<745; i++){
+		printf("\n\nElement Index: %d", elements[i]);
+		printf("\n Vertex: %f %f", vertices[elements[i]].x, vertices[elements[i]].y);
+		printf("\n Texcoords: %f %f", uvs[elements[i]].x, uvs[elements[i]].y);
+	}
+
+
+	int max = *max_element(elements.begin(), elements.end());
+	std::cout<<"Max value: "<<max<<std::endl;
 	
+	printf("\nfile_uvs size: %d", file_uvs.size());
+	printf("\nordered_uvs size: %d",ordered_uvs.size());
+	printf("\nelements size: %d", elements.size());
+	printf("\nvertices size: %d", vertices.size());
+	printf("\nvertex no. 403: %f %f ", vertices[402].x, vertices[402].y);
+	printf("\ntexcoords no. 403: %f %f ", ordered_uvs[402][0].x, ordered_uvs[402][0].y);
+
 	//printf("Got to here");
 	//std::cin.ignore();
-
+// END DEBUG
 }
 
 
@@ -742,6 +778,7 @@ void Gviewer::parseLine(std::string line, std::vector<std::string> &vert_inds )
 	}
 	
 }
+
 
 
 void Gviewer::printProgramLog( GLuint program )
