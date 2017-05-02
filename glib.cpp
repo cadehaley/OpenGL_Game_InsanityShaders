@@ -22,6 +22,8 @@ Gviewer::Gviewer(){
   DIM =         1.8;
   th =          8.0;
   ph =          4.0;
+
+  mouseX = mouseY = 0;
 }
 
 bool Gviewer::initGL()
@@ -29,6 +31,8 @@ bool Gviewer::initGL()
 	bool success = true;
 	GLenum error = GL_NO_ERROR;
 
+	// SDL params
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 	
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -50,7 +54,7 @@ bool Gviewer::initGL()
 	glEnable(GL_TEXTURE_2D);
 
 	IMG_Init(IMG_INIT_PNG);
-	loadTexture("models/suzanne_ao.png");
+	loadTexture("models/bridge.png");
 
 	for (int i = 0; i<textures.size(); i++){
 		textureid.push_back(-1);
@@ -85,7 +89,7 @@ bool Gviewer::initGL()
 	std::vector<glm::vec2> suzanne_uvs;
 	std::vector<glm::vec3> suzanne_normals;
 	std::vector<GLushort> suzanne_elements;
-	std::string path = "models/suzanne_textured.obj";
+	std::string path = "models/bridge.obj";
 
 	loadObj(path, suzanne_vertices, suzanne_uvs, suzanne_normals, suzanne_elements);
 
@@ -236,10 +240,7 @@ bool Gviewer::initGL()
 		printf("Could not bind gViewMatrixLocation uniform.");
 		return false;
 	}
-	//float angle = SDL_GetTicks() / 1000.0 * 15;
-	//viewMatrix = doView(0.0f, angle);
 
-	// * Then redraw in render * //
 
 
 
@@ -288,7 +289,7 @@ void Gviewer::render()
 	glClearColor(0.5, 0.5, 1.0, 1.0);
 
 	// Rotate view
-	float angle = SDL_GetTicks() / 1000.0 * 40;
+	float angle = SDL_GetTicks() / 1000.0 * 5;
 	viewMatrix = doView(0.0f, angle);
 
 
@@ -371,8 +372,12 @@ void Gviewer::handleEvent(SDL_Event * event)
 {
     // Window events
 
+
     // If window event occurred
     if (event->type == 768){
+
+		mouseX = event->motion.x;
+		mouseY = event->motion.y;
         switch (event->window.event){
             // Resize window
             case SDL_WINDOWEVENT_RESIZED:
@@ -421,14 +426,16 @@ void Gviewer::resize(){
 glm::mat4 Gviewer::doView(float Translate, float angle)
 {
     glm::mat4 Projection = glm::perspective(glm::radians(80.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    glm::mat4 View = glm::lookAt(glm::vec3(0.6, 0.6, 0.6), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 View = glm::lookAt(glm::vec3(8.0, 8.0, 8.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
     glm::vec3 axis_y(0,1,0);
     glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
+    // Mouse control
+    View = glm::rotate(View, glm::radians((float)mouseY), glm::vec3(1,0,0));
+    View = glm::rotate(View, glm::radians((float)mouseX), glm::vec3(0,0,1));
 
-//    View = glm::rotate(View, anim, glm::vec3(-1.0f, 0.0f, 0.0f));
-//    View = glm::rotate(View, anim, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+
+glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
     return Projection * View * Model * anim;
 }
 
@@ -562,6 +569,8 @@ int Gviewer::loadTexture(std::string filename){
 }
 
 
+// OBJ loader that will generate a ready-to-use VBO, IBO, and UVs that economizes by sharing
+// 	duplicate vertices and UV coordinates
 void Gviewer::loadObj(std::string filename, std::vector<glm::vec3> &vertices, std::vector<glm::vec2> &uvs, std::vector<glm::vec3> &normals, std::vector<GLushort> &elements)
 {
 	std::ifstream in(filename.c_str(), std::ios::in);

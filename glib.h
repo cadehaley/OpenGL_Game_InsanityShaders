@@ -51,6 +51,10 @@ class Gviewer
     GLuint gTBO;
     GLint uniform_mytexture;
 
+    // Game variables
+    int mouseX, mouseY;
+
+
     Gviewer();
 
 
