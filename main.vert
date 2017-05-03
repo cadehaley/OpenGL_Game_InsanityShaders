@@ -7,7 +7,7 @@ out vec2 TextureCoord;
 
 void main()
 { 
-	TextureCoord = texcoord;	
+	TextureCoord = texcoord;
 	gl_Position = mvp * vec4( LVertexPos3D, 1.0 );
 	
 }

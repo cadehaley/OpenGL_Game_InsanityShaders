@@ -10,11 +10,12 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_image.h>
-#include <glm/vec3.hpp> // glm::vec3
-#include <glm/vec4.hpp> // glm::vec4
-#include <glm/mat4x4.hpp> // glm::mat4
-#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
-#include <glm/gtc/type_ptr.hpp>
+#include "glm/vec3.hpp" // glm::vec3
+#include "glm/vec4.hpp" // glm::vec4
+#include "glm/mat4x4.hpp" // glm::mat4
+#include "glm/gtc/matrix_transform.hpp" // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include "glm/gtx/vector_angle.hpp" // glm::orientedAngle
+#include "glm/gtc/type_ptr.hpp"
 
 
 class Gviewer
@@ -42,6 +43,8 @@ class Gviewer
 
     int FOV;
     float ZMIN,ZMAX,DIM,th,ph;
+    glm::vec3 m_position, m_direction;
+    glm::mat4 x_rot; glm::mat4 y_rot;
     glm::mat4 viewMatrix;
 
     // Game files

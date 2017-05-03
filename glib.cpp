@@ -23,6 +23,11 @@ Gviewer::Gviewer(){
   th =          8.0;
   ph =          4.0;
 
+  // Initial camera loc
+  m_position = glm::vec3(0,1,0);
+  m_direction = glm::vec3(0,0,1);
+  x_rot = glm::mat4(1); y_rot = glm::mat4(1);
+
   mouseX = mouseY = 0;
 }
 
@@ -244,11 +249,6 @@ bool Gviewer::initGL()
 
 
 
-	
-
-
-
-
 
 
 	glUseProgram(NULL);
@@ -376,8 +376,8 @@ void Gviewer::handleEvent(SDL_Event * event)
     // If window event occurred
     if (event->type == 768){
 
-		mouseX = event->motion.x;
-		mouseY = event->motion.y;
+		mouseX = event->motion.xrel;
+		mouseY = event->motion.yrel;
         switch (event->window.event){
             // Resize window
             case SDL_WINDOWEVENT_RESIZED:
@@ -426,17 +426,41 @@ void Gviewer::resize(){
 glm::mat4 Gviewer::doView(float Translate, float angle)
 {
     glm::mat4 Projection = glm::perspective(glm::radians(80.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    glm::mat4 View = glm::lookAt(glm::vec3(1.0, 0.5, 1.0), glm::vec3(2.0, 0.5, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    //glm::mat4 View = glm::lookAt(glm::vec3(1.0, 0.5, 1.0), glm::vec3(2.0, 0.5, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
-    glm::vec3 axis_y(0,1,0);
-    glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
+    // X rotation
+    glm::mat4 new_x_rot = glm::rotate(glm::mat4(1), glm::radians((float)mouseX*(-0.5f)), glm::vec3(0,1,0));
+    x_rot = x_rot * new_x_rot;
+
+    glm::vec3 y_pivot = glm::cross(m_direction,glm::vec3(0,1,0));
+
+    // Y rotation
+    glm::mat4 new_y_rot = glm::rotate(glm::mat4(1), glm::radians((float)mouseY*(0.5f)), y_pivot);
+    // Constrain
+/*    glm::vec3 old_direction = glm::vec3(y_rot * glm::vec4(m_direction, 1.0));
+    glm::vec3 new_direction = glm::vec3(new_y_rot * glm::vec4(m_direction, 1.0));
+    float old_angle = glm::orientedAngle(old_direction, glm::vec3(1,0,0), glm::vec3(0,1,0));
+    float new_angle = glm::orientedAngle(new_direction, glm::vec3(1,0,0), glm::vec3(0,1,0));
+    if (old_angle == new_angle){
+*/	y_rot = new_y_rot * y_rot;
+//    }
+
+    m_direction = glm::vec3(x_rot * y_rot * glm::vec4(0.0f,0.0f,1.0f, 1.0f));
+
+
+    glm::mat4 View = glm::lookAt(m_position, m_position + m_direction, glm::vec3(0.0, 1.0, 0.0));
+    //glm::vec3 axis_y(0,1,0);
+    //glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
     // Mouse control
- //   View = glm::rotate(View, glm::radians((float)mouseY), glm::vec3(1,0,0));
- //   View = glm::rotate(View, glm::radians((float)mouseX), glm::vec3(0,0,1));
+
+    mouseX = mouseY = 0;
+
+     //View = glm::rotate(View, glm::radians((float)mouseY), glm::vec3(glm::vec4(1,0,0,1)*View));
+    //View = glm::rotate(View, glm::radians((float)mouseX), glm::vec3(glm::vec4(0,1,0,1)*View));
 
 
 glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-    return Projection * View * Model * anim;
+    return Projection * View * Model;
 }
 
 
@@ -713,7 +737,7 @@ void Gviewer::loadObj(std::string filename, std::vector<glm::vec3> &vertices, st
 
 	}
 
-printf("\nelem_mapping size: %d elements size: %d ", elem_mapping.size(), elements.size());
+
 
 // Map element values to their absolute position in ordered_uvs
 for (int i = 0; i<elements.size(); i++){
@@ -738,7 +762,7 @@ for (int i = 0; i<elements.size(); i++){
 			vertices.push_back(file_vertices[i]);	
 		}	
 	}
-//DEBUG
+/*DEBUG
 	for (int i = 744; i<745; i++){
 		printf("\n\nElement Index: %d", elements[i]);
 		printf("\n Vertex: %f %f", vertices[elements[i]].x, vertices[elements[i]].y);
@@ -758,7 +782,7 @@ for (int i = 0; i<elements.size(); i++){
 
 	//printf("Got to here");
 	//std::cin.ignore();
-// END DEBUG
+ END DEBUG*/
 }
 
 
