@@ -5,8 +5,8 @@ Gviewer::Gviewer(){
   bpp = flags = gProgramID = gVBO = gIBO = 0;
 
   // Window dimensions
-  width =      1080;
-  height =     720;
+  width =      1440;
+  height =     900;
   gWindow = NULL;
 
   // What to draw
@@ -53,8 +53,8 @@ bool Gviewer::initGL()
 	// Textures
 	glEnable(GL_TEXTURE_2D);
 
-	IMG_Init(IMG_INIT_PNG);
-	loadTexture("models/bridge.png");
+	IMG_Init(IMG_INIT_JPG);
+	loadTexture("models/megatexture.jpg");
 
 	for (int i = 0; i<textures.size(); i++){
 		textureid.push_back(-1);
@@ -89,7 +89,7 @@ bool Gviewer::initGL()
 	std::vector<glm::vec2> suzanne_uvs;
 	std::vector<glm::vec3> suzanne_normals;
 	std::vector<GLushort> suzanne_elements;
-	std::string path = "models/bridge.obj";
+	std::string path = "models/rosslyn_building_interior.obj";
 
 	loadObj(path, suzanne_vertices, suzanne_uvs, suzanne_normals, suzanne_elements);
 
@@ -426,13 +426,13 @@ void Gviewer::resize(){
 glm::mat4 Gviewer::doView(float Translate, float angle)
 {
     glm::mat4 Projection = glm::perspective(glm::radians(80.0f), 4.0f / 3.0f, 0.1f, 100.f);
-    glm::mat4 View = glm::lookAt(glm::vec3(8.0, 8.0, 8.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 View = glm::lookAt(glm::vec3(1.0, 0.5, 1.0), glm::vec3(2.0, 0.5, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
     glm::vec3 axis_y(0,1,0);
     glm::mat4 anim = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
     // Mouse control
-    View = glm::rotate(View, glm::radians((float)mouseY), glm::vec3(1,0,0));
-    View = glm::rotate(View, glm::radians((float)mouseX), glm::vec3(0,0,1));
+ //   View = glm::rotate(View, glm::radians((float)mouseY), glm::vec3(1,0,0));
+ //   View = glm::rotate(View, glm::radians((float)mouseX), glm::vec3(0,0,1));
 
 
 glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
