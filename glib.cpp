@@ -177,6 +177,23 @@ bool Gviewer::initGL()
 		return false;
        }
 
+
+	gTimeLocation = glGetUniformLocation(gProgramID, "time");
+       if (gVertexPos3DLocation == -1){
+		printf("time is unused or is not a valid glsl program variable.\n");
+		return false;
+       }
+
+
+
+	gFactorLocation = glGetUniformLocation(gProgramID, "factor");
+       if (gVertexPos3DLocation == -1){
+		printf("factor is unused or is not a valid glsl program variable.\n");
+		return false;
+       }
+	factor =0.00;
+
+
 	glUseProgram(gProgramID);
 
 
@@ -286,7 +303,7 @@ void Gviewer::render()
 	//Clear color buffer
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	glClearColor(0.5, 0.5, 1.0, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 
 	// Rotate view
 	float angle = SDL_GetTicks() / 1000.0 * 5;
@@ -346,6 +363,20 @@ void Gviewer::render()
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIBO);
 		int bufsize; glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufsize);
+		
+		// Time
+		GLfloat time = (SDL_GetTicks() / 1000.0);
+		glUniform1f(gTimeLocation, time);
+
+		//printf("\ntime: %f", time);
+
+
+		// Factor
+
+		if (time > 10.0 && factor <=1.0)
+			factor += 0.00001;
+		glUniform1f(gFactorLocation, factor);
+
 		glDrawElements(GL_TRIANGLES, bufsize/sizeof(GLushort), GL_UNSIGNED_SHORT, NULL);
 
 		// Disable vertex position

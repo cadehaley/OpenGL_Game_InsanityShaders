@@ -37,6 +37,8 @@ class Gviewer
     GLint gViewMatrixLocation;
     GLint gVertexPos3DLocation;
     GLint gNormal3DLocation;
+    GLint gTimeLocation;
+    GLint gFactorLocation;
     GLuint gVBO;
     GLuint gNBO;
     GLuint gIBO;
@@ -56,6 +58,7 @@ class Gviewer
 
     // Game variables
     int mouseX, mouseY;
+    GLfloat factor;
 
 
     Gviewer();

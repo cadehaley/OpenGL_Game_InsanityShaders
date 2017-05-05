@@ -32,9 +32,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd megatexture.jpg
+map_Kd /home/cade/Desktop/10.jpg
 
-newmtl Material.003_ceiling_chapelsides_curved
+newmtl Material.003_megatexture.jpg
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
@@ -43,7 +43,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd /home/cade/Desktop/10.jpg
+map_Kd megatexture.jpg
 
 newmtl Material.004
 Ns 96.078431
