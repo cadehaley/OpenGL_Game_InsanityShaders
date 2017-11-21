@@ -34,11 +34,7 @@ int main( int argc, char* args[] )
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-		// OpenGL prefs
-		//SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
-		//SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
-		//SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
-		//SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
+		// OpenGL prefs - enable double buffering
 		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 		SDL_GL_SetSwapInterval(1);
 
@@ -110,7 +106,8 @@ int main( int argc, char* args[] )
 			}
 		}
 	}
-
+	
+	//Destroy viewer object
 	viewer.close();
 
 	//Destroy window
