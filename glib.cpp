@@ -6,35 +6,36 @@
 
 
 Gviewer::Gviewer(){
-  bpp = flags = gProgramID = gVBO = gIBO = 0;
+	bpp = flags = gProgramID = gVBO = gIBO = 0;
 
-  // Game data
-  model_data_path = "models/rosslyn_building_interior.obj";
-  vert_shader_path = "main.vert";
-  frag_shader_path = "main.frag";
+	// Game data
+	model_data_path = "models/rosslyn_building_interior.obj";
+	vert_shader_path = "main.vert";
+	frag_shader_path = "main.frag";
+	texture_1_path = "models/megatexture.jpg";
 
-  // Window dimensions
-  width =      1440;
-  height =     900;
-  gWindow = NULL;
+	// Window dimensions
+	width =      1440;
+	height =     900;
+	gWindow = NULL;
 
-  gVertexPos3DLocation = -1;
-  gViewMatrixLocation = -1;
+	gVertexPos3DLocation = -1;
+	gViewMatrixLocation = -1;
 
-  // GL camera
-  FOV =         90;
-  ZMIN =        0.01;
-  ZMAX =        100.0;
-  DIM =         1.8;
-  th =          8.0;
-  ph =          4.0;
+	// GL camera
+	FOV =         90;
+	ZMIN =        0.01;
+	ZMAX =        100.0;
+	DIM =         1.8;
+	th =          8.0;
+	ph =          4.0;
 
-  // Initial camera loc
-  m_position = glm::vec3(0,1,0);
-  m_direction = glm::vec3(0,0,1);
-  x_rot = glm::mat4(1); y_rot = glm::mat4(1);
+	// Initial camera loc
+	m_position = glm::vec3(0,1,0);
+	m_direction = glm::vec3(0,0,1);
+	x_rot = glm::mat4(1); y_rot = glm::mat4(1);
 
-  mouseX = mouseY = 0;
+	mouseX = mouseY = 0;
 }
 
 
@@ -63,7 +64,7 @@ bool Gviewer::initGL(){
 		// Textures
 	glEnable(GL_TEXTURE_2D);
 	IMG_Init(IMG_INIT_JPG);
-	loadTexture("models/megatexture.jpg");
+	loadTexture(texture_1_path);
 	// Bind textures to array 'textures'
 	for (int i = 0; i<textures.size(); i++){
 		textureid.push_back(-1);

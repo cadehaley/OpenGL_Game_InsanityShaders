@@ -119,6 +119,7 @@ class Gviewer
 	std::string vert_shader_path;
 	std::string frag_shader_path;
 	std::string model_data_path;
+	std::string texture_1_path;
 	std::vector <SDL_Surface*> textures;
 	std::vector <GLuint> textureid;
 	GLint gTexCoordLocation;
